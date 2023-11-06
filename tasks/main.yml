@@ -35,7 +35,7 @@
   mysql_db:
     name: "{{ mysql_database }}"
     state: present
-  when: mysql_create_database
+  when: mysql_create_database or mysql_drop_database_before_import
 
 - name: "Import SQL sended"
   mysql_db:
