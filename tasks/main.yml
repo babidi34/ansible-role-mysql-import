@@ -1,0 +1,66 @@
+---
+- name: Load a variable file based on the OS type, or a default if not found.
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+    - "default.yml"
+
+- name: Install mysql-client utility
+  package:
+    name: "{{ mysql_package_name }}"
+    state: present
+  when: db_type == 'mysql'
+
+- name: Install mariadb-client utility
+  package:
+    name: "{{ mariadb_package_name }}"
+    state: present
+  when: db_type == 'mariadb'
+
+- name: "Copy SQL dump to remote server"
+  copy:
+    src: "{{ mysql_dump_local_path }}"
+    dest: "{{ ansible_user_dir }}/{{ mysql_dump_local_filename }}"
+  when: mysql_dump_local_path is defined
+
+- name: "Remove database after importation"
+  mysql_db:
+    name: "{{ mysql_database }}"
+    state: absent
+  when: mysql_drop_database_before_import
+
+- name: "Create database if mysql_create_database is true"
+  mysql_db:
+    name: "{{ mysql_database }}"
+    state: present
+  when: mysql_create_database
+
+- name: "Import SQL sended"
+  mysql_db:
+    name: "{{ mysql_database }}"
+    state: import
+    target: "{{ ansible_user_dir }}/{{ mysql_dump_local_filename }}"
+  when: mysql_dump_local_path is defined
+
+- name: "import SQL from remote"
+  mysql_db:
+    name: "{{ mysql_database }}"
+    state: import
+    target: "{{ mysql_dump_path }}"
+  when: mysql_dump_local_path is not defined
+
+- name: "Supprimer le fichier de dump après importation"
+  file:
+    path: "{{ mysql_dump_path }}"
+    state: absent
+  when: mysql_dump_local_path is defined and mysql_remove_dump_after_import
+
+- name: "Gérer les droits d'accès aux tables importées"
+  mysql_user:
+    name: "{{ mysql_user }}"
+    priv: "{{ mysql_database }}.*:ALL"
+    password: "{{ mysql_password }}"
+    state: present
+  when: mysql_manage_privileges

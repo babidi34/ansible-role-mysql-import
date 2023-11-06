@@ -1,0 +1,14 @@
+---
+# mysql-import/defaults/main.yml
+db_type: mariadb
+mysql_database: "nom_base_de_donnees"
+mysql_backup_directory: "/var/backups/mysql/{{ mysql_database }}"
+mysql_user: root
+mysql_create_database: false
+#mysql_dump_local_path: "{{ playbook_dir }}/../backups/dump.sql"
+mysql_dump_local_filename: "{{ mysql_dump_local_path | basename }}"
+mysql_dump_path: "{{ ansible_user_dir }}/{{ mysql_database }}"
+mysql_import_remote: false
+mysql_drop_database_before_import: false
+mysql_remove_dump_after_import: true
+mysql_manage_privileges: true
